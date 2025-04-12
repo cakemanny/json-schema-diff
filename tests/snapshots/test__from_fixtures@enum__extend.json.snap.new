@@ -1,0 +1,17 @@
+---
+source: tests/test.rs
+assertion_line: 12
+expression: diff
+info:
+  lhs:
+    enum:
+      - foo
+      - bar
+  rhs:
+    enum:
+      - foo
+      - bar
+      - baz
+input_file: tests/fixtures/enum/extend.json
+---
+[]

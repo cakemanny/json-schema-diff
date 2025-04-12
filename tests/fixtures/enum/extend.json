@@ -1,0 +1,4 @@
+{
+  "lhs": { "enum": ["foo", "bar"] },
+  "rhs": { "enum": ["foo", "bar", "baz"] }
+}

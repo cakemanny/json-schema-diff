@@ -137,6 +137,20 @@ impl<F: FnMut(Change)> DiffWalker<F> {
         }
     }
 
+    fn diff_enum(&mut self, json_path: &str, lhs: &mut SchemaObject, rhs: &mut SchemaObject) {
+        // TODO:
+        // Plan
+        //
+        //      Normalize
+        //
+        //          Is `enum: [1]` -> `const: 1` ?
+        //
+        //      Compare enum array and compute added and removed.
+        //
+        //          May need to consider const and enum
+        //          May want to consider any_of and enum
+    }
+
     fn diff_properties(
         &mut self,
         json_path: &str,
@@ -467,6 +481,7 @@ impl<F: FnMut(Change)> DiffWalker<F> {
         // If we split the types, we don't want to compare type-specific properties
         // because they are already compared in the `Self::diff_any_of`
         if !is_lhs_split && !is_rhs_split {
+            self.diff_enum(json_path, lhs, rhs);
             self.diff_properties(json_path, lhs, rhs)?;
             self.diff_range(json_path, lhs, rhs)?;
             self.diff_additional_properties(json_path, lhs, rhs)?;

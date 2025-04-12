@@ -36,6 +36,18 @@ pub enum ChangeKind {
         /// The value of the removed const.
         removed: serde_json::Value,
     },
+    // TODO: should adding a value to an enum be different than
+    // typing something as an enum?
+    /// TODO
+    EnumAdd {
+        /// The values added to the enumeration
+        added: Vec<serde_json::Value>,
+    },
+    /// TODO
+    EnumRemove {
+        /// The values removed from the enumeration
+        removed: Vec<serde_json::Value>,
+    },
     /// A property has been added and (depending on additionalProperties) is now additionally
     /// allowed.
     PropertyAdd {
