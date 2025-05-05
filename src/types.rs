@@ -135,6 +135,8 @@ impl ChangeKind {
             Self::TypeRemove { .. } => true,
             Self::ConstAdd { .. } => true,
             Self::ConstRemove { .. } => false,
+            Self::EnumAdd { .. } => false,
+            Self::EnumRemove { .. } => true,
             Self::PropertyAdd {
                 lhs_additional_properties,
                 ..

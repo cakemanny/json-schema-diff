@@ -1,6 +1,5 @@
 ---
 source: tests/test.rs
-assertion_line: 12
 expression: diff
 info:
   lhs:
@@ -14,4 +13,13 @@ info:
       - baz
 input_file: tests/fixtures/enum/extend.json
 ---
-[]
+[
+    Change {
+        path: "",
+        change: EnumAdd {
+            added: [
+                String("baz"),
+            ],
+        },
+    },
+]

@@ -1,6 +1,5 @@
 ---
 source: tests/test.rs
-assertion_line: 12
 expression: diff
 info:
   lhs:
@@ -9,7 +8,8 @@ info:
       - bar
   rhs:
     enum:
+      - bar
       - foo
-input_file: tests/fixtures/enum/constrict.json
+input_file: tests/fixtures/enum/reorder.json
 ---
 []

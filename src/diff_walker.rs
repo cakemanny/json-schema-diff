@@ -149,6 +149,35 @@ impl<F: FnMut(Change)> DiffWalker<F> {
         //
         //          May need to consider const and enum
         //          May want to consider any_of and enum
+        let lhs_values = lhs.enum_values.clone().unwrap_or_default();
+        let rhs_values = rhs.enum_values.clone().unwrap_or_default();
+
+        let removed: Vec<Value> = lhs_values
+            .iter()
+            .filter(|v| !rhs_values.contains(v))
+            .cloned()
+            .collect();
+        let added: Vec<Value> = rhs_values
+            .iter()
+            .filter(|v| !lhs_values.contains(v))
+            .cloned()
+            .collect();
+        if !removed.is_empty() {
+            (self.cb)(Change {
+                path: json_path.to_owned(),
+                change: ChangeKind::EnumRemove {
+                    removed,
+                },
+            })
+        }
+        if !added.is_empty() {
+            (self.cb)(Change {
+                path: json_path.to_owned(),
+                change: ChangeKind::EnumAdd {
+                    added,
+                },
+            })
+        }
     }
 
     fn diff_properties(
@@ -391,6 +420,7 @@ impl<F: FnMut(Change)> DiffWalker<F> {
     }
 
     fn restrictions_for_single_type(schema_object: &SchemaObject, ty: InstanceType) -> Schema {
+        // FIXME: this doesn't deal with const or enum
         let mut ret = SchemaObject {
             instance_type: Some(SingleOrVec::Single(Box::new(ty))),
             ..Default::default()
@@ -457,7 +487,9 @@ impl<F: FnMut(Change)> DiffWalker<F> {
                 },
             }
         }
-        if let Some(value) = schema_object.const_value.take() {
+        if let Some(mut values) = schema_object.enum_values.take_if(|vs| vs.len() == 1) {
+            *schema_object = do_normalize(values.pop().unwrap())
+        } else if let Some(value) = schema_object.const_value.take() {
             *schema_object = do_normalize(value)
         }
     }
@@ -538,9 +570,19 @@ impl JsonSchemaExt for SchemaObject {
             }
         } else if let Some(ref constant) = self.const_value {
             serde_value_to_own(constant).into()
+        } else if let Some(ref enum_values) = self.enum_values {
+            // TODO: Maybe it's better to return Any?
+            enum_values
+                .iter()
+                .map(serde_value_to_own)
+                .flat_map(|v| InternalJsonSchemaType::from(v).explode())
+                .collect::<BTreeSet<_>>()
+                .into_iter()
+                .collect()
         } else if !self.object().properties.is_empty() {
             JsonSchemaType::Object.into()
         } else if let Some(ref any_of) = self.subschemas().any_of {
+            // TODO: should this be checking the resulting set size?
             InternalJsonSchemaType::Multiple(
                 any_of
                     .iter()
@@ -588,6 +630,23 @@ enum InternalJsonSchemaType {
 impl From<JsonSchemaType> for InternalJsonSchemaType {
     fn from(other: JsonSchemaType) -> Self {
         InternalJsonSchemaType::Simple(other)
+    }
+}
+impl FromIterator<JsonSchemaType> for InternalJsonSchemaType {
+    fn from_iter<T: IntoIterator<Item = JsonSchemaType>>(v: T) -> Self {
+        let mut iter = v.into_iter();
+        match iter.next() {
+            None => InternalJsonSchemaType::Never,
+            Some(first) => match iter.next() {
+                None => Self::Simple(first),
+                Some(second) => Self::Multiple(
+                    std::iter::once(first)
+                        .chain(Some(second))
+                        .chain(iter)
+                        .collect(),
+                ),
+            },
+        }
     }
 }
 
